@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
     const API_KEY = 'FvJd28wc1hX7lC67eupzx3bqfqjFyaTPINfXG4cE';
     const API_URL = 'https://api.congress.gov/v3/summaries';
     const PAGE_SIZES = [10, 25, 50, 100];
+    const DEFAULT_FILTER_TERMS = ["Congratulating", "Recognizing", "Expressing support", "Commemorating"];
 
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
@@ -19,7 +20,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
       const [billData, setBillData] = useState(null);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState(null);
-      const [showBillData, setShowBillData] = useState(false);
 
       useEffect(() => {
         function handleClickOutside(event) {
@@ -38,7 +38,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 
       useEffect(() => {
         const fetchBillData = async () => {
-          if (bill?.bill?.url && showBillData) {
+          if (bill?.bill?.url) {
             setLoading(true);
             try {
               const response = await fetch(`${bill.bill.url}&api_key=${API_KEY}`);
@@ -55,7 +55,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
           }
         };
         fetchBillData();
-      }, [bill?.bill?.url, showBillData]);
+      }, [bill?.bill?.url]);
 
       const renderBillData = (data, level = 0) => {
         if (!data) return null;
@@ -89,10 +89,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
             )}
           </div>
         ));
-      };
-
-      const handleMoreDetailsClick = () => {
-        setShowBillData(true);
       };
 
       return ReactDOM.createPortal(
@@ -141,14 +137,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
               <div dangerouslySetInnerHTML={{ __html: bill.text }} />
             </div>
 
-            <div className="modal-section">
-              {bill?.bill?.url && (
-                <button onClick={handleMoreDetailsClick}>More Details</button>
-              )}
-              {loading && <p>Loading...</p>}
-              {error && <p>Error: {error}</p>}
-              {!loading && !error && billData && renderBillData(billData)}
-            </div>
+            {loading && <p>Loading...</p>}
+            {error && <p>Error: {error}</p>}
+            {!loading && !error && billData && renderBillData(billData)}
 
             <button className="close-button" onClick={onClose}>
               &times;
@@ -184,6 +175,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
       const [allBills, setAllBills] = useState([]);
       const [totalBillCount, setTotalBillCount] = useState(0);
       const [isFetching, setIsFetching] = useState(false);
+      const [filterTerms, setFilterTerms] = useState(DEFAULT_FILTER_TERMS);
+      const [additionalFilter, setAdditionalFilter] = useState('');
 
       useEffect(() => {
         const fetchAllBills = async () => {
@@ -230,6 +223,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 
       useEffect(() => {
         let filteredBills = allBills;
+        const allFilterTerms = [...DEFAULT_FILTER_TERMS, ...filterTerms];
         if (searchKeywords) {
           const keywords = searchKeywords.toLowerCase().split(/\s+/).filter(Boolean);
           filteredBills = filteredBills.filter(bill => {
@@ -238,12 +232,17 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
             return keywords.some(keyword => title.includes(keyword));
           });
         }
+        filteredBills = filteredBills.filter(bill => {
+          if (!bill.bill?.title) return true;
+          const title = bill.bill.title.toLowerCase();
+          return !allFilterTerms.some(term => title.includes(term.toLowerCase()));
+        });
         setBills(filteredBills);
         setTotalPages(Math.ceil(filteredBills.length / pageSize));
         setTotalBillCount(filteredBills.length);
         setOffset(0);
         setCurrentPage(1);
-      }, [allBills, pageSize, searchKeywords]);
+      }, [allBills, pageSize, searchKeywords, filterTerms]);
 
       useEffect(() => {
         const handleScroll = () => {
@@ -330,6 +329,17 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
         setCurrentPage(1);
       };
 
+      const handleAddFilterTerm = () => {
+        if (additionalFilter.trim() !== '') {
+          setFilterTerms(prevTerms => [...prevTerms, additionalFilter.trim()]);
+          setAdditionalFilter('');
+        }
+      };
+
+      const handleRemoveFilterTerm = (termToRemove) => {
+        setFilterTerms(prevTerms => prevTerms.filter(term => term !== termToRemove));
+      };
+
       const renderPageButtons = () => {
         if (totalPages <= 1) return null;
         return (
@@ -406,6 +416,24 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
                 />
                 <p className="bill-count">Total Bills: {totalBillCount}</p>
               </div>
+            </div>
+            <div className="filter-terms">
+              {filterTerms.map(term => (
+                <span key={term}>
+                  {term}
+                  <button onClick={() => handleRemoveFilterTerm(term)}>x</button>
+                </span>
+              ))}
+            </div>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Add filter term"
+                className="search-input"
+                value={additionalFilter}
+                onChange={(e) => setAdditionalFilter(e.target.value)}
+              />
+              <button onClick={handleAddFilterTerm}>Add</button>
             </div>
             {isFetching ? (
               <div className="loading-container">

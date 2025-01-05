@@ -297,3 +297,17 @@ body {
       margin-top: 10px;
       font-weight: bold;
     }
+  
+    .filter-terms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .filter-terms span {
+      background-color: #e9ecef;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
