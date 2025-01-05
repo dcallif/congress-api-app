@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
     const API_KEY = 'FvJd28wc1hX7lC67eupzx3bqfqjFyaTPINfXG4cE';
     const API_URL = 'https://api.congress.gov/v3/summaries';
     const PAGE_SIZES = [10, 25, 50, 100];
-    const DEFAULT_FILTER_TERMS = ["Congratulating", "Recognizing", "Expressing support", "Commemorating"];
+    const DEFAULT_FILTER_TERMS = ["Congratulating", "Recognizing", "Expressing support", "Commemorating", "Condemning", "Acknowledging", "Designating", "To Name", "Honoring"];
 
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
