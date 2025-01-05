@@ -20,6 +20,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
       const [billData, setBillData] = useState(null);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState(null);
+      const [showBillData, setShowBillData] = useState(false);
 
       useEffect(() => {
         function handleClickOutside(event) {
@@ -38,7 +39,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 
       useEffect(() => {
         const fetchBillData = async () => {
-          if (bill?.bill?.url) {
+          if (bill?.bill?.url && showBillData) {
             setLoading(true);
             try {
               const response = await fetch(`${bill.bill.url}&api_key=${API_KEY}`);
@@ -55,7 +56,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
           }
         };
         fetchBillData();
-      }, [bill?.bill?.url]);
+      }, [bill?.bill?.url, showBillData]);
 
       const renderBillData = (data, level = 0) => {
         if (!data) return null;
@@ -89,6 +90,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
             )}
           </div>
         ));
+      };
+
+      const handleMoreDetailsClick = () => {
+        setShowBillData(true);
       };
 
       return ReactDOM.createPortal(
@@ -137,9 +142,14 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
               <div dangerouslySetInnerHTML={{ __html: bill.text }} />
             </div>
 
-            {loading && <p>Loading...</p>}
-            {error && <p>Error: {error}</p>}
-            {!loading && !error && billData && renderBillData(billData)}
+            <div className="modal-section">
+              {bill?.bill?.url && (
+                <button onClick={handleMoreDetailsClick}>More Details</button>
+              )}
+              {loading && <p>Loading...</p>}
+              {error && <p>Error: {error}</p>}
+              {!loading && !error && billData && renderBillData(billData)}
+            </div>
 
             <button className="close-button" onClick={onClose}>
               &times;
@@ -223,7 +233,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 
       useEffect(() => {
         let filteredBills = allBills;
-        const allFilterTerms = [...DEFAULT_FILTER_TERMS, ...filterTerms];
         if (searchKeywords) {
           const keywords = searchKeywords.toLowerCase().split(/\s+/).filter(Boolean);
           filteredBills = filteredBills.filter(bill => {
@@ -235,7 +244,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
         filteredBills = filteredBills.filter(bill => {
           if (!bill.bill?.title) return true;
           const title = bill.bill.title.toLowerCase();
-          return !allFilterTerms.some(term => title.includes(term.toLowerCase()));
+          return !filterTerms.some(term => title.includes(term.toLowerCase()));
         });
         setBills(filteredBills);
         setTotalPages(Math.ceil(filteredBills.length / pageSize));
